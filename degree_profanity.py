@@ -68,9 +68,7 @@ def remove_extras( text ) :
 
 
 def main( ):
-    '''
-    The 
-    '''
+
     parser = argparse.ArgumentParser(
         prog = 'degree_profanity.py',
         description=" The program which detect search words and estimate the degree of profanity of the tweets from twitter.",
