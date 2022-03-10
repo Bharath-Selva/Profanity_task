@@ -1,14 +1,18 @@
+"""
+# Dependencies
+"""
 import argparse, re, os, sys
 import numpy as np
 import openpyxl
 import pandas as pd
 
+# Working Directory
 cwd = os.getcwd()
 print( f" working directory: { cwd }" )
 
 def input_files( header_option:str, file_loc:str, file_extn:str, tweet_loc) :
     '''
-    Get file 
+    read the input tweet files based the file type as txt, text, csv
     '''
 
     if file_extn in [ "txt", "text", "csv" ] :
@@ -21,7 +25,9 @@ def input_files( header_option:str, file_loc:str, file_extn:str, tweet_loc) :
     return in_file
 
 def get_file_loc( file_name ) :
-
+    '''
+    Retrive file path based on the file name with extension in the current working directory
+    '''
     abs_filepath = []
     for root, dir, files in os.walk( cwd ) :
         if file_name in files :
@@ -32,7 +38,9 @@ def get_file_loc( file_name ) :
 ### Extract Mentions, urls amd hashtags
 URLPATTERN = r'(https?://\S+)'
 def extract_details( raw_df ) :
-
+    '''
+    Extract the details in seperate column such as mentions, hashtags, email and URLs.
+    '''
     raw_df[ 'Raw_Tweets' ] = raw_df[ 'Raw_Tweets'].astype(str)
     raw_df[ 'mentions' ] = raw_df[ 'Raw_Tweets'].str.findall( r'(?<=@)\w+' ).apply( ','.join )
     raw_df[ 'hashtags' ] = raw_df[ 'Raw_Tweets'].str.findall( r'#(\w+)' ).apply( ','.join )
@@ -42,7 +50,9 @@ def extract_details( raw_df ) :
     return raw_df
 
 def clean_tweet( raw_txt, pattern ) :
-
+    '''
+    Remove the mentions, urls, hashtags, etectra., from the each raw tweets and return the text from the tweets.
+    '''
     remve_char = re.findall( pattern, raw_txt )
     for char in remve_char :
         raw_txt = re.sub( char, '', raw_txt)
@@ -50,11 +60,17 @@ def clean_tweet( raw_txt, pattern ) :
     return raw_txt
 
 def remove_extras( text ) :
+    '''
+    Remove hexa characters from the raw tweets
+    '''
     text = re.sub( r'(\\x(.){2})', '', text )
     return text
 
 
 def main( ):
+    '''
+    The 
+    '''
     parser = argparse.ArgumentParser(
         prog = 'degree_profanity.py',
         description=" The program which detect search words and estimate the degree of profanity of the tweets from twitter.",
@@ -71,6 +87,7 @@ def main( ):
         type = str,
         help = "filename of search (abuse) words with extension"
     )
+    # Header option - There is a chance that some input files might have column header and to not include header and not skip the first input text.
     parser.add_argument( 
         '-hdr', '--header',
         action = 'store_true', 
@@ -79,7 +96,7 @@ def main( ):
     )
 
     for grp in parser._action_groups :
-        if grp.title == 'optional arguments' :
+        if grp.title == 'optional arguments' : # Nothing of important, just for fun
             grp.title = 'options'
 
     args = parser.parse_args()
@@ -121,20 +138,25 @@ def main( ):
             tweet_file_extn = tweet_loc.split( os.sep )[ -1 ].split( '.' )[ -1 ]
             input_tweet = input_files( header, tweet_loc, tweet_file_extn, tweet_loc )
         
+        # To add column header
         col_num = input_tweet.shape[ 1 ]
         col_old0 = input_tweet.columns.to_list( )[ 0 ]
         input_tweet = input_tweet.rename( columns = { col_old0 : "Raw_Tweets" } )
 
+        # Sample display of Raw data and number of tweets and fields(1) available
         print( " ************ Raw Tweets ************ " )
         print( input_tweet.head(5), end = '\n' )
         print( f" Total number of tweets { input_tweet.shape[ 0 ] } with { input_tweet.shape[ 1 ] } columns")
 
+        # Remove extras and clean the data
         input_tweet[ 'Raw_Tweets' ] = input_tweet[ 'Raw_Tweets' ].apply( remove_extras )
         input_tweet[ 'Tweets' ] = np.vectorize(clean_tweet)( input_tweet[ 'Raw_Tweets' ], "@[\w]*" )
         input_tweet = extract_details( input_tweet )
 
         def search_words( wrd_tweet ) :
-            
+            '''
+            Search for the key words from search_word input files in each tweets and sort it in a list
+            '''
             tmp_list1 = [ ]
             tmp_list2 = [ ]
             for wrd1 in list_of_wrds :
@@ -152,6 +174,7 @@ def main( ):
 
             return srch_wrds
 
+        # Estimate  Degree of Profanity for each tweets
         input_tweet[ 'Racial_slurs' ] = input_tweet[ 'Tweets' ].apply( search_words )
         input_tweet[ 'Racial_slurs_count' ] = input_tweet[ 'Racial_slurs' ].apply( lambda x: len( re.findall( r'\w+', x) ) )
         input_tweet[ 'Tweet_word_count' ] = input_tweet[ 'Tweets' ].apply( lambda x: len( re.findall( r'\w+', x) ) )
@@ -159,9 +182,12 @@ def main( ):
 
         print( input_tweet[ [ 'Tweets', 'Degree of Profanity' ] ] )
 
+        # Export the analysis as CSV file in Current Working Directory
         input_tweet.to_csv( "tweet_degree_profanity.csv", index = False )
         print( "Degree of Profanity for Tweets from different user is estimated.", end = '\n' )
         print( "Saved in tweet_degree_profanity.csv file.", end = '\n' )
+
+        print( " ******************** File Executed! ******************** " )
 
 if __name__ == "__main__" :
     main( )
