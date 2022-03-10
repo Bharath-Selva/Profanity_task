@@ -42,5 +42,16 @@ positional arguments:
 
 options:
   -h, --help       show this help message and exit
-  -hdr, --header   Should be called only when there is header in the tweet file
+  -hdr, --header   Should be called only when there is header in the tweet input file
+```
+***For Example***
+To run this script, 
+* without column header in tweet file.
+```bash
+python .\degree_profanity.py tweet_input.xlsx racial_slur.txt
+```
+
+* To run this script, with column header in tweet file.
+```bash
+python .\degree_profanity.py tweet_input.xlsx racial_slur.txt -hdr
 ```

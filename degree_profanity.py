@@ -75,7 +75,7 @@ def main( ):
         '-hdr', '--header',
         action = 'store_true', 
         dest = 'header',
-        help = 'Should be called only when there is header in the tweet file'
+        help = 'Should be called only when there is header in the tweet input file'
     )
 
     for grp in parser._action_groups :
